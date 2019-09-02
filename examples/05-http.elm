@@ -21,7 +21,7 @@ main =
 
 
 type Model
-  = Failure
+  = Failure String
   | Loading
   | Success String
 
@@ -52,8 +52,26 @@ update msg model =
         Ok fullText ->
           (Success fullText, Cmd.none)
 
-        Err _ ->
-          (Failure, Cmd.none)
+        Err errMsg ->
+          let
+            errText =
+              case errMsg of
+                Http.BadUrl message ->
+                  message
+
+                Http.Timeout ->
+                  "The HTTP request timed out"
+
+                Http.NetworkError ->
+                  "Something went wrong w/ the network"
+
+                Http.BadStatus statusCode ->
+                  "Bad status code " ++ String.fromInt statusCode
+
+                Http.BadBody bodyExplanation ->
+                  "Something went wrong: " ++ bodyExplanation
+          in
+            (Failure errText, Cmd.none)
 
 
 
@@ -72,8 +90,8 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   case model of
-    Failure ->
-      text "I was unable to load your book."
+    Failure errMsg ->
+      text ("I was unable to load your book: " ++ errMsg)
 
     Loading ->
       text "Loading..."
